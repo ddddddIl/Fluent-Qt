@@ -519,8 +519,18 @@ void FluentMenu::paintEvent(QPaintEvent* event)
         const QColor secondaryText = isEnabled ? colors.textSecondary : colors.textDisabled;
 
         if (leadingColumn > 0) {
-            const QRect leadingRect(itemRect.left() + itemInset,
-                itemRect.top() + (itemRect.height() - leadingColumn) / 2, leadingColumn, leadingColumn);
+            // The leading gutter spans from the item-inset edge to the text
+            // start. Center icons and check marks in it; a fixed 24 px column
+            // at the leading edge left the icon at roughly one third of the
+            // gutter and one pixel up-left from QRect::center() on even sizes.
+            // zh_CN: 图标留白从条目内缩边缘延伸到文字起点，图标与勾选标记在
+            // 整段留白中居中；固定在左缘的 24 px 子列会让图标偏左，偶数尺寸下
+            // QRect::center() 还会再偏左上 1px。
+            const int leadingLeft = itemRect.left() + itemInset;
+            const int leadingRight = itemRect.left() + textPadding + leadingColumn;
+            const int iconSide = qMin(Typography::IconSize::Standard, leadingColumn);
+            const QRect leadingRect(leadingLeft, itemRect.top() + (itemRect.height() - iconSide) / 2,
+                leadingRight - leadingLeft, iconSide);
             if (action->isCheckable() && action->isChecked()) {
                 p.setPen(primaryText);
                 Typography::Icons::paintGlyph(p, QRectF(leadingRect), Typography::Icons::CheckMark,
@@ -528,14 +538,8 @@ void FluentMenu::paintEvent(QPaintEvent* event)
             } else if (!action->icon().isNull()) {
                 const QIcon::Mode mode = !isEnabled ? QIcon::Disabled : (isActive ? QIcon::Active : QIcon::Normal);
                 const QIcon::State state = action->isChecked() ? QIcon::On : QIcon::Off;
-                // The leading column is 24 px for alignment, but WinUI menu
-                // command icons use a 16 px optical slot. Painting into the
-                // whole column lets QIcon upscale a 16 px source to 24 px,
-                // making editing glyphs visually dominate their labels.
-                const int iconSide = qMin(Typography::IconSize::Standard,
-                    qMin(leadingRect.width(), leadingRect.height()));
-                const QRect iconRect(leadingRect.center().x() - iconSide / 2, leadingRect.center().y() - iconSide / 2,
-                    iconSide, iconSide);
+                const QRect iconRect(leadingRect.x() + (leadingRect.width() - iconSide) / 2,
+                    leadingRect.y() + (leadingRect.height() - iconSide) / 2, iconSide, iconSide);
                 action->icon().paint(&p, iconRect, Qt::AlignCenter, mode, state);
             }
         }
