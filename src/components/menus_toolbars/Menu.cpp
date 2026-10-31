@@ -529,8 +529,14 @@ void FluentMenu::paintEvent(QPaintEvent* event)
             const int leadingLeft = itemRect.left() + itemInset;
             const int leadingRight = itemRect.left() + textPadding + leadingColumn;
             const int iconSide = qMin(Typography::IconSize::Standard, leadingColumn);
-            const QRect leadingRect(leadingLeft, itemRect.top() + (itemRect.height() - iconSide) / 2,
-                leadingRight - leadingLeft, iconSide);
+            // Nudge the whole leading area down one logical pixel: the glyph ink
+            // sits above the text's optical center. Keep icons and check marks
+            // aligned to the same baseline.
+            // zh_CN: 图标留白整体下移 1 逻辑像素，抵消字形墨迹偏高；图标与勾选
+            // 标记保持同一基线。
+            const int leadingTop =
+                itemRect.top() + (itemRect.height() - iconSide) / 2 + 1;
+            const QRect leadingRect(leadingLeft, leadingTop, leadingRight - leadingLeft, iconSide);
             if (action->isCheckable() && action->isChecked()) {
                 p.setPen(primaryText);
                 Typography::Icons::paintGlyph(p, QRectF(leadingRect), Typography::Icons::CheckMark,
