@@ -9,6 +9,7 @@
 #include <windowsx.h>
 #include <dwmapi.h>
 
+#include <QGuiApplication>
 #include <QtMath>
 #include <QVariant>
 #include <QWindow>
@@ -72,6 +73,13 @@ bool supportsDwmSystemBackdrop(const WindowsVersionInfo& version)
 
 HWND hwndForWindow(QWidget* window)
 {
+    // Only the Windows QPA plugin produces real HWNDs; offscreen and minimal report
+    // synthetic WIds that must not reach Win32 window APIs.
+    // zh_CN: 只有 Windows QPA 插件会产生真实 HWND；offscreen 和 minimal 返回的是合成 WId，
+    // 不能传给 Win32 窗口 API。
+    if (QGuiApplication::platformName() != QLatin1String("windows"))
+        return nullptr;
+
     // A prepared QWindow may not have a native surface yet. Chrome queries must
     // not create it before QWidget submits its pending geometry on show.
     // zh_CN: 已准备的 QWindow 可能尚无原生 surface；查询 chrome 不能抢先创建并覆盖 QWidget 的待显示几何。
